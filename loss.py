@@ -230,6 +230,41 @@ class Loss_BinaryCrossentropy(Loss):
         # Normalize gradient
         self.dinputs = self.dinputs / samples
 
+class Loss_MeanSquaredError(Loss):
+    def forward(self, y_pred, y_true):
+
+        sample_losses = np.mean((y_true - y_pred)**2, axis = -1)
+        #np.power((y_true - y_pred), 2)
+        return sample_losses
+    
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+        
+        # Number of outputs in every sample
+        # We'll use the first sample to count them
+        outputs = len(dvalues[0])
+
+        #Calculate gradient
+        self.dinputs = -2 * (y_true - dvalues) / outputs
+        #Normalize gradient
+        self.dinputs = self.dinputs / samples
+
+class Loss_MeanAbsoluteError(Loss): # L1 loss
+    def forward(self, y_pred, y_true):
+        sample_loses = np.mean(np.abs(y_true - y_pred), axis = -1)
+
+        return sample_loses
+        
+    def backward(self, dvalues, y_true):
+        # Number of samples
+        samples = len(dvalues)
+        # Number of outputs in every sample
+        # We'll use the first sample to count them
+        outputs = len(dvalues[0])
+        # Calculate gradient
+        self.dinputs = np.sign(y_true - dvalues) / outputs
+        # Normalize gradient
+        self.dinputs = self.dinputs / samples
 
 # softmax_outputs = np.array([[0.7, 0.1, 0.2],[0.1, 0.5, 0.4],[0.02, 0.9, 0.08]])
 # class_targets = np.array([1, 2, 1])

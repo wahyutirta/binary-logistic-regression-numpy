@@ -7,11 +7,28 @@ This is a temporary script file.
 import numpy as np
 class Layer_Dense:
 
+    """Glorot uniform initializer, also called Xavier uniform initializer.
+        It draws samples from a uniform distribution within [-limit, limit]
+        where `limit` is `sqrt(6 / (fan_in + fan_out))`
+        where `fan_in` is the number of input units in the weight tensor
+        and `fan_out` is the number of output units in the weight tensor.
+        # Arguments
+        seed: A Python integer. Used to seed the random generator.
+        # Returns
+        An initializer.
+        # References
+        Glorot & Bengio, AISTATS 2010
+        http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf
+        """
+
     # Layer initialization
     def __init__(self, n_inputs, n_neurons, weight_regularizer_l1=0, weight_regularizer_l2=0, bias_regularizer_l1=0, bias_regularizer_l2=0):
     
         # Initialize weights and biases
-        self.weights = 0.01 * np.random.randn(n_inputs, n_neurons)
+        """
+        Glorot uniform
+        """
+        self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
         self.biases = np.zeros((1, n_neurons))
         # Set regularization strength
         self.weight_regularizer_l1 = weight_regularizer_l1
