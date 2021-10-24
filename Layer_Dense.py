@@ -37,7 +37,7 @@ class Layer_Dense:
         self.bias_regularizer_l2 = bias_regularizer_l2
 
     # Forward pass
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         # Remember input values
         self.inputs = inputs
         # Calculate output values from inputs, weights and biases
@@ -98,3 +98,11 @@ class Layer_Dense:
         self.dinputs = np.dot(dvalues, self.weights.T)
         # this is the order
         # drelu_dx0 = drelu_dz * dsum_dxw0 * w[0] --> dmul_dx0 = w[0]
+
+    # Retrieve layer parameters
+    def get_parameters(self):
+        return self.weights, self.biases
+    # Set weights and biases in a layer instance
+    def set_parameters(self, weights, biases):
+        self.weights = weights
+        self.biases = biases

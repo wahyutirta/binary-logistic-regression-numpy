@@ -12,45 +12,83 @@ from Activation_Softmax import Activation_Softmax
 class Loss:
 
     # Regularization loss calculation
-    def regularization_loss(self, layer):
+    def regularization_loss(self):
         # 0 by default
         regularization_loss = 0
-        # L1 regularization - weights
-        # calculate only when factor greater than 0
-        if layer.weight_regularizer_l1 > 0:
-            regularization_loss += layer.weight_regularizer_l1 * np.sum(
-                np.abs(layer.weights)
-            )
-        # L2 regularization - weights
-        if layer.weight_regularizer_l2 > 0:
-            regularization_loss += layer.weight_regularizer_l2 * np.sum(
-                layer.weights * layer.weights
-            )
-        # L1 regularization - biases
-        # calculate only when factor greater than 0
-        if layer.bias_regularizer_l1 > 0:
-            regularization_loss += layer.bias_regularizer_l1 * np.sum(
-                np.abs(layer.biases)
-            )
-        # L2 regularization - biases
-        if layer.bias_regularizer_l2 > 0:
-            regularization_loss += layer.bias_regularizer_l2 * np.sum(
-                layer.biases * layer.biases
-            )
+
+        for layer in self.trainable_layers:
+
+            # L1 regularization - weights
+            # calculate only when factor greater than 0
+            if layer.weight_regularizer_l1 > 0:
+                regularization_loss += layer.weight_regularizer_l1 * np.sum(
+                    np.abs(layer.weights)
+                )
+            # L2 regularization - weights
+            if layer.weight_regularizer_l2 > 0:
+                regularization_loss += layer.weight_regularizer_l2 * np.sum(
+                    layer.weights * layer.weights
+                )
+            # L1 regularization - biases
+            # calculate only when factor greater than 0
+            if layer.bias_regularizer_l1 > 0:
+                regularization_loss += layer.bias_regularizer_l1 * np.sum(
+                    np.abs(layer.biases)
+                )
+            # L2 regularization - biases
+            if layer.bias_regularizer_l2 > 0:
+                regularization_loss += layer.bias_regularizer_l2 * np.sum(
+                    layer.biases * layer.biases
+                )
         return regularization_loss
+
+    
+    # Set/remember trainable layers
+    def remember_trainable_layers(self, trainable_layers):
+        
+        """
+        The remember_trainable_layers method in the common Loss class “tells” the loss object
+        which layers in the Model object are trainable. The calculate method was modified to also
+        return the self.regularization_loss() during a single call. The regularization_loss
+        method currently requires a layer object, but with the self.trainable_layers property set
+        in remember_trainable_layers, method we can now iterate over the trainable layers to
+        compute regularization loss for the entire model, rather than one layer at a time:
+        """
+        
+        self.trainable_layers = trainable_layers
+
 
     # Calculates the data and regularization losses
     # given model output and ground truth values
-    def calculate(self, output, y):
+    def calculate(self, output,y, *, include_regularization=False):
 
         # Calculate sample losses
         sample_losses = self.forward(output, y)
-
         # Calculate mean loss
         data_loss = np.mean(sample_losses)
+        # Add accumulated sum of losses and sample count
+        self.accumulated_sum += np.sum(sample_losses)
+        self.accumulated_count += len(sample_losses)
+        # If just data loss - return it
+        if not include_regularization:
+            return data_loss
+        # Return the data and regularization losses
+        return data_loss, self.regularization_loss()
 
-        # Return loss
-        return data_loss
+    
+    # Calculates accumulated loss
+    def calculate_accumulated(self, *, include_regularization=False):
+        # Calculate mean loss
+        data_loss = self.accumulated_sum / self.accumulated_count
+        # If just data loss - return it
+        if not include_regularization:
+            return data_loss
+        # Return the data and regularization losses
+        return data_loss, self.regularization_loss()
+        # Reset variables for accumulated loss
+    def new_pass(self):
+        self.accumulated_sum = 0
+        self.accumulated_count = 0
 
 
 # Cross-entropy loss
@@ -61,7 +99,7 @@ class Loss_CategoricalCrossentropy(Loss):
 
         # Number of samples in a batch
         samples = len(y_pred)
-
+        """
         # Clip data to prevent division by 0
         # Clip both sides to not drag mean towards any value
         # to prevent  log 0, clipp y_pred to the lowest value
@@ -70,8 +108,9 @@ class Loss_CategoricalCrossentropy(Loss):
         # and substract 1 with 1e-7
         # -np.log(1+1e-7) = -9.999999505838704e-08 --> error become negative
         # -np.log(1-1e-7) = 1.0000000494736474e-07 --> positive error
+        """
         y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
-
+        """
         # Probabilities for target values -
         # only if categorical labels --> [0,1,2,3] --> 4 samples
         # e.g, softmax_outputs :
@@ -83,10 +122,11 @@ class Loss_CategoricalCrossentropy(Loss):
         # sample 1 expected to be dog
         # sample 2 expected to be cat
         # sample 3 expected to be cat
+        """
         if len(y_true.shape) == 1:
             # print( y_true.shape, y_pred_clipped.shape)
 
-            correct_confidences = y_pred_clipped[range(samples), y_true]
+            """
             # array slicing
             # softmax_outputs is a numpy array and you can index it like plain Python lists
             # softmax_outputs[5:10] or multi-dimensional NumPy arrays
@@ -115,14 +155,16 @@ class Loss_CategoricalCrossentropy(Loss):
             # or ranges (like 5:10) we're using a variable containing a list both
             # this range(len()) expression and class_targets are lists.
             # and it might look like class_targets[[5,6,7,8,9,10],[2,3]]
-
-        # Mask values - only for one-hot encoded labels
-        # one hot label e.g.
-        # [[1,0,0], dog
-        # [0,1,0], cat
-        # [0,0,1]] cat
+            """
+            correct_confidences = y_pred_clipped[range(samples), y_true]
+        
         elif len(y_true.shape) == 2:
-            multiply = np.multiply(y_pred_clipped, y_true)
+            """
+            # Mask values - only for one-hot encoded labels
+            # one hot label e.g.
+            # [[1,0,0], dog
+            # [0,1,0], cat
+            # [0,0,1]] cat
             # e.g
             # [[0.7, 0.1, 0.2], * [[1,0,0],
             # [0.1, 0.5, 0.4], *   [0,1,0],
@@ -131,9 +173,13 @@ class Loss_CategoricalCrossentropy(Loss):
             # [[0.7  0.   0.  ]
             # [0.   0.5  0.  ]
             # [0.   0.   0.08]]
-            correct_confidences = np.sum(multiply, axis=1)
             # sum in row wise but keepdims = false so it becomes
             # [0.7  0.5  0.08]
+            """
+            multiply = np.multiply(y_pred_clipped, y_true)
+            
+                
+            correct_confidences = np.sum(multiply, axis=1)
 
         # Losses
         negative_log_likelihoods = 1 * (-np.log(correct_confidences))
@@ -163,7 +209,23 @@ class Loss_CategoricalCrossentropy(Loss):
 
 # Softmax classifier - combined Softmax activation
 # and cross-entropy loss for faster backward step
-class Activation_Softmax_Loss_CategoricalCrossentropy:
+class Activation_Softmax_Loss_CategoricalCrossentropy():
+    # Backward pass
+    def backward(self, dvalues, y_true):
+    # Number of samples
+        samples = len(dvalues)
+        # If labels are one-hot encoded,
+        # turn them into discrete values
+        if len(y_true.shape) == 2:
+            y_true = np.argmax(y_true, axis=1)
+        # Copy so we can safely modify
+        self.dinputs = dvalues.copy()
+        # Calculate gradient
+        self.dinputs[range(samples), y_true] -= 1
+        # Normalize gradient
+        self.dinputs = self.dinputs / samples
+        
+"""class Activation_Softmax_Loss_CategoricalCrossentropy(Loss):
 
     # Creates activation and loss function objects
     def __init__(self):
@@ -195,7 +257,7 @@ class Activation_Softmax_Loss_CategoricalCrossentropy:
         # Calculate gradient
         self.dinputs[range(samples), y_true] -= 1
         # Normalize gradient
-        self.dinputs = self.dinputs / samples
+        self.dinputs = self.dinputs / samples"""
 
 
 # Binary cross-entropy loss

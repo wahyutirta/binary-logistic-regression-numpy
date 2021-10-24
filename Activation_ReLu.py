@@ -5,7 +5,7 @@ import numpy as np
 class Activation_ReLu:
 
     # Forward pass
-    def forward(self, inputs):
+    def forward(self, inputs, training):
 
         # Remember input values
         self.inputs = inputs
@@ -19,12 +19,12 @@ class Activation_ReLu:
         # Since we need to modify original variable,
         # let's make a copy of values first
         self.dinputs = dvalues.copy()
-
-        # Zero gradient where input values were negative
+        
+        """# Zero gradient where input values were negative
         # we just copy value from next layer because 
         # derivative of relu if z > 0 = 1, else 0
         # in chain rule we will multiply dvalue by one 
         # we dont have to do the multiply, just copy the dvalue
         # so we just have to make sure to change negative value to 0
-        # drelu_dz = dvalue * (1. if z > 0 else 0.)
+        # drelu_dz = dvalue * (1. if z > 0 else 0.)"""
         self.dinputs[self.inputs <= 0] = 0 

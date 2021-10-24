@@ -1,7 +1,7 @@
 # Linear activation
 class Activation_Linear:
 # Forward pass
-    def forward(self, inputs):
+    def forward(self, inputs, training):
     # Just remember values
         self.inputs = inputs
         self.output = inputs
